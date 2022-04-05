@@ -1,0 +1,95 @@
+@import "./vars.less";
+
+.main-layout {
+  background: @item-hover-bg  !important;
+  margin-top: 10px;
+}
+
+.main-app-layout-header {
+  background-color: @component-background  !important;
+  border-bottom: 1px solid @item-hover-bg;
+}
+
+.text-color {
+  color: @text-color  !important;
+}
+
+.main-menu {
+  background: @component-background  !important;
+  color: @text-color;
+}
+
+.main-menu-item a {
+  color: @text-color;
+}
+
+.main-menu-item-selected a {
+  color: @main-menu-item-selected-color  !important;
+}
+
+.main-menu-item-selected a:hover {
+  color: @main-menu-item-selected-color  !important;
+}
+
+.main-app-collapsed {
+  background: @component-background  !important;
+  border-top: 1px solid @item-hover-bg;
+}
+
+.main-app-menu-group {
+  border-right: 1px solid @item-hover-bg;
+}
+
+.main-app-menu-group-title {
+  color: @text-color;
+  background: @component-background  !important;
+  border-bottom: 1px solid @item-hover-bg;
+}
+
+.main-app-qrTitle {
+  color: @text-color;
+}
+
+.main-app-account {
+  color: @text-color;
+}
+
+.main-app-link {
+  color: @primary-color;
+}
+
+.main-app-logout {
+  color: @primary-color  !important;
+}
+
+.main-group-active {
+  background-color: @menu-item-active-bg  !important;
+  color: @primary-color  !important;
+}
+
+.main-group-item:hover {
+  color: @primary-color  !important;
+}
+
+.main-group {
+  background: @component-background;
+}
+
+.main-group-cover {
+  background: @component-background;
+  border-right: 1px solid @item-hover-bg;
+}
+
+.main-svg-container:hover {
+  svg {
+    fill: @primary-color  !important;
+  }
+}
+
+.main-svg-container:hover+.main-collapsed-line {
+  background-color: @primary-color  !important;
+}
+
+.main-fake-menu {
+  background-color: @component-background;
+}

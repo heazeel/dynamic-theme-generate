@@ -1,0 +1,41 @@
+{
+  "name": "dynamic-theme-generate",
+  "version": "1.0.7",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": {
+    "name": "heazeel",
+    "url": "https://github.com/heazeel"
+  },
+  "license": "ISC",
+  "bundledDependencies": [
+    "glob",
+    "hash.js",
+    "less",
+    "less-plugin-npm-import",
+    "postcss",
+    "strip-css-comments"
+  ],
+  "dependencies": {
+    "glob": "^7.1.3",
+    "hash.js": "^1.1.5",
+    "less": "^3.9.0",
+    "less-bundle-promise": "^1.0.7",
+    "less-plugin-npm-import": "^2.1.0",
+    "postcss": "^6.0.21",
+    "postcss-less": "^3.1.4",
+    "strip-css-comments": "^4.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.0.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1"
+  }
+}
