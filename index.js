@@ -110,6 +110,9 @@ function isValidColor (color) {
   }
 */
 function generateColorMap (content) {
+  content = content.replace(/\((\s*\r\n?|\s*\n)\s*~/g, '(~');
+  content = content.replace(/`(\s*\r\n?|\s*\n)\s*\);/g, '`);');
+  content = content.replace(/,(\s*\r\n?|\s*\n)\s*(purple;)/g, ', purple;');
   return content
     .split('\n')
     .filter((line) => line.startsWith('@') && line.indexOf(':') > -1)
@@ -136,6 +139,9 @@ function generateColorMap (content) {
 }
 
 function filterColorVariables (content, mappings) {
+  content = content.replace(/\((\s*\r\n?|\s*\n)\s*~/g, '(~');
+  content = content.replace(/`(\s*\r\n?|\s*\n)\s*\);/g, '`);');
+  content = content.replace(/,(\s*\r\n?|\s*\n)\s*(purple;)/g, ', purple;');
   return content
     .split('\n')
     .filter((line) => {
@@ -147,10 +153,10 @@ function filterColorVariables (content, mappings) {
           if (color && color.startsWith('@')) {
             if (!isValidColor(getColor(color, mappings))) return false;
             return true;
+          } else {
+            if (color === 'inherit') return true;
           }
           return isValidColor(color);
-        } else if (line.indexOf('purple;') > -1) {
-          return true;
         }
       } catch (e) {
         return false;
