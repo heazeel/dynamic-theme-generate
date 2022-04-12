@@ -1,33 +1,33 @@
-const fs = require('fs');
-const path = require('path');
-const glob = require('glob');
-const postcss = require('postcss');
-const less = require('less');
-const bundle = require('less-bundle-promise');
-const NpmImportPlugin = require('less-plugin-npm-import');
+const fs = require("fs");
+const path = require("path");
+const glob = require("glob");
+const postcss = require("postcss");
+const less = require("less");
+const bundle = require("less-bundle-promise");
+const NpmImportPlugin = require("less-plugin-npm-import");
 
-let cssCache = '';
+let cssCache = "";
 
 // antd涉及的颜色函数
 const COLOR_FUNCTIONS = [
-  'color',
-  'lighten',
-  'darken',
-  'saturate',
-  'desaturate',
-  'fadein',
-  'fadeout',
-  'fade',
-  'spin',
-  'mix',
-  'hsv',
-  'tint',
-  'shade',
-  'greyscale',
-  'multiply',
-  'contrast',
-  'screen',
-  'overlay'
+  "color",
+  "lighten",
+  "darken",
+  "saturate",
+  "desaturate",
+  "fadein",
+  "fadeout",
+  "fade",
+  "spin",
+  "mix",
+  "hsv",
+  "tint",
+  "shade",
+  "greyscale",
+  "multiply",
+  "contrast",
+  "screen",
+  "overlay",
 ];
 
 // 转换为颜色函数的正则匹配：/color(.*)/,  /lighten(.*)/,
@@ -36,9 +36,9 @@ const antdColorRegexArray = COLOR_FUNCTIONS.map(
 );
 
 // 生成随机16进制颜色
-function randomColor () {
+function randomColor() {
   return (
-    '#' + (0x1000000 + Math.random() * 0xffffff).toString(16).substring(1, 7)
+    "#" + (0x1000000 + Math.random() * 0xffffff).toString(16).substring(1, 7)
   );
 }
 
@@ -53,7 +53,7 @@ function randomColor () {
   最后得到：
   @link-color: #1890ff
 */
-function getColor (varName, mappings) {
+function getColor(varName, mappings) {
   const color = mappings[varName];
   if (color in mappings) {
     return getColor(color, mappings);
@@ -70,11 +70,11 @@ function getColor (varName, mappings) {
   isValidColor('rgba(0, 0, 0, 0.5)'); //true
   isValidColor('20px'); //false
 */
-function isValidColor (color) {
-  if (color && color.includes('rgb')) return true;
+function isValidColor(color) {
+  if (color && color.includes("rgb")) return true;
   if (!color || color.match(/px/g)) return false;
   if (color.match(/colorPalette|fade/g)) return true;
-  if (color.charAt(0) === '#') {
+  if (color.charAt(0) === "#") {
     color = color.substring(1);
     return (
       [3, 4, 6, 8].indexOf(color.length) > -1 && !isNaN(parseInt(color, 16))
@@ -109,13 +109,13 @@ function isValidColor (color) {
     ....
   }
 */
-function generateColorMap (content) {
-  content = content.replace(/\((\s*\r\n?|\s*\n)\s*~/g, '(~');
-  content = content.replace(/`(\s*\r\n?|\s*\n)\s*\);/g, '`);');
-  content = content.replace(/,(\s*\r\n?|\s*\n)\s*(purple;)/g, ', purple;');
+function generateColorMap(content) {
+  content = content.replace(/\((\s*\r\n?|\s*\n)\s*~/g, "(~");
+  content = content.replace(/`(\s*\r\n?|\s*\n)\s*\);/g, "`);");
+  content = content.replace(/,(\s*\r\n?|\s*\n)\s*(purple;)/g, ", purple;");
   return content
-    .split('\n')
-    .filter((line) => line.startsWith('@') && line.indexOf(':') > -1)
+    .split("\n")
+    .filter((line) => line.startsWith("@") && line.indexOf(":") > -1)
     .reduce((prev, next) => {
       try {
         const matches = next.match(/(?=\S*)([@a-zA-Z0-9'-]+).*:[ ]{1,}(.*);/);
@@ -123,7 +123,7 @@ function generateColorMap (content) {
           return prev;
         }
         let [, varName, color] = matches;
-        if (color && color.startsWith('@')) {
+        if (color && color.startsWith("@")) {
           color = getColor(color, prev);
           if (!isValidColor(color)) return prev;
           prev[varName] = color;
@@ -132,29 +132,33 @@ function generateColorMap (content) {
         }
         return prev;
       } catch (e) {
-        console.log('e', e);
+        console.log("e", e);
         return prev;
       }
     }, {});
 }
 
-function filterColorVariables (content, mappings) {
-  content = content.replace(/\((\s*\r\n?|\s*\n)\s*~/g, '(~');
-  content = content.replace(/`(\s*\r\n?|\s*\n)\s*\);/g, '`);');
-  content = content.replace(/,(\s*\r\n?|\s*\n)\s*(purple;)/g, ', purple;');
+function filterColorVariables(content, mappings) {
+  content = content.replace(/\((\s*\r\n?|\s*\n)\s*~/g, "(~");
+  content = content.replace(/`(\s*\r\n?|\s*\n)\s*\);/g, "`);");
+  content = content.replace(/,(\s*\r\n?|\s*\n)\s*(purple;)/g, ", purple;");
   return content
-    .split('\n')
+    .split("\n")
     .filter((line) => {
       try {
-        if (line.startsWith('@') && line.indexOf(':') > -1) {
-          if (line.startsWith('@preset-colors') || line.startsWith('@outline-fade')) return true;
+        if (line.startsWith("@") && line.indexOf(":") > -1) {
+          if (
+            line.startsWith("@preset-colors") ||
+            line.startsWith("@outline-fade")
+          )
+            return true;
           const matches = line.match(/(?=\S*)([@a-zA-Z0-9'-]+).*:[ ]{1,}(.*);/);
           const [, , color] = matches;
-          if (color && color.startsWith('@')) {
+          if (color && color.startsWith("@")) {
             if (!isValidColor(getColor(color, mappings))) return false;
             return true;
           } else {
-            if (color === 'inherit') return true;
+            if (color === "inherit") return true;
           }
           return isValidColor(color);
         }
@@ -163,13 +167,13 @@ function filterColorVariables (content, mappings) {
       }
       return false;
     })
-    .join('\n');
+    .join("\n");
 }
 
 // 过滤只包含颜色的css属性
-const reducePlugin = postcss.plugin('reducePlugin', () => {
+const reducePlugin = postcss.plugin("reducePlugin", () => {
   const cleanRule = (rule) => {
-    if (rule.selector.startsWith('.main-color .palatte-')) {
+    if (rule.selector.startsWith(".main-color .palatte-")) {
       rule.remove();
       return;
     }
@@ -183,12 +187,13 @@ const reducePlugin = postcss.plugin('reducePlugin', () => {
       }
       // 删除不包含颜色的规则
       if (
-        !decl.prop.includes('color') &&
-        !decl.prop.includes('background') &&
-        !decl.prop.includes('border') &&
-        !decl.prop.includes('box-shadow') &&
-        !decl.prop.includes('stroke') &&
-        !decl.prop.includes('fill') &&
+        !decl.prop.includes("color") &&
+        !decl.prop.includes("background") &&
+        !decl.prop.includes("border") &&
+        !decl.prop.includes("box-shadow") &&
+        !decl.prop.includes("filter") &&
+        !decl.prop.includes("stroke") &&
+        !decl.prop.includes("fill") &&
         !Number.isNaN(decl.value)
       ) {
         decl.remove();
@@ -211,11 +216,11 @@ const reducePlugin = postcss.plugin('reducePlugin', () => {
   };
 });
 
-function getMatches (string, regex) {
+function getMatches(string, regex) {
   const matches = {};
   let match;
   while ((match = regex.exec(string))) {
-    if (match[2].startsWith('rgba') || match[2].startsWith('#')) {
+    if (match[2].startsWith("rgba") || match[2].startsWith("#")) {
       matches[`@${match[1]}`] = match[2];
     }
   }
@@ -223,11 +228,11 @@ function getMatches (string, regex) {
 }
 
 // 将less编译为css
-function render (text, paths) {
+function render(text, paths) {
   return less.render(text, {
     paths: paths,
     javascriptEnabled: true,
-    plugins: [new NpmImportPlugin({ prefix: '~' })]
+    plugins: [new NpmImportPlugin({ prefix: "~" })],
   });
 }
 
@@ -239,19 +244,19 @@ function render (text, paths) {
     '@text-color' : '#cccccc'
   }
 */
-function getLessVarsObj (content) {
+function getLessVarsObj(content) {
   const lessVars = {};
   const matches = content.match(/@(.*:[^;]*)/g) || [];
 
   matches.forEach((variable) => {
     const definition = variable.split(/:\s*/);
-    const varName = definition[0].replace(/['"]+/g, '').trim();
-    lessVars[varName] = definition.splice(1).join(':');
+    const varName = definition[0].replace(/['"]+/g, "").trim();
+    lessVars[varName] = definition.splice(1).join(":");
   });
   return lessVars;
 }
 
-function getLessVars (filtPath) {
+function getLessVars(filtPath) {
   const sheet = fs.readFileSync(filtPath).toString();
   let lessVars = {};
   lessVars = getLessVarsObj(sheet);
@@ -262,38 +267,38 @@ function getLessVars (filtPath) {
   Input: @primary-1
   Output: color(~`colorPalette("@{primary-color}", ' 1 ')`)
 */
-function getShade (varName) {
+function getShade(varName) {
   let [, className, number] = varName.match(/(.*)-(\d)/);
-  if (/primary-\d/.test(varName)) className = '@primary-color';
+  if (/primary-\d/.test(varName)) className = "@primary-color";
   return (
     'color(~`colorPalette("@{' +
-    className.replace('@', '') +
+    className.replace("@", "") +
     '}", ' +
     number +
-    ')`)'
+    ")`)"
   );
 }
 
-async function generateTheme ({
+async function generateTheme({
   antDir,
   stylesDir,
   varFile,
   outputFilePath,
-  themeVariables = ['@primary-color'],
-  rootEntryName = 'default',
-  prefix = 'ant'
+  themeVariables = ["@primary-color"],
+  rootEntryName = "default",
+  prefix = "ant",
 }) {
   try {
-    const antdPath = path.join(antDir, 'lib');
+    const antdPath = path.join(antDir, "lib");
     const nodeModulesPath = path.join(
-      antDir.slice(0, antDir.indexOf('node_modules')),
-      './node_modules'
+      antDir.slice(0, antDir.indexOf("node_modules")),
+      "./node_modules"
     );
 
     // antd样式文件主入口
     let antdStylesFile;
-    if (rootEntryName === 'default') {
-      antdStylesFile = path.join(antDir, './dist/antd.less');
+    if (rootEntryName === "default") {
+      antdStylesFile = path.join(antDir, "./dist/antd.less");
     } else {
       antdStylesFile = path.join(antDir, `./dist/antd.${rootEntryName}.less`);
     }
@@ -306,7 +311,7 @@ async function generateTheme ({
     let styles = [];
     const stylesDirs = [].concat(stylesDir);
     stylesDirs.forEach((s) => {
-      styles = styles.concat(glob.sync(path.join(s, './**/*.less')));
+      styles = styles.concat(glob.sync(path.join(s, "./**/*.less")));
     });
 
     let themeCompiledVars = {};
@@ -315,9 +320,9 @@ async function generateTheme ({
     主题变量
     包含了antd-dark和antd-default，以及自己定义的额外变量
     */
-    let themeVars = themeVariables || ['@primary-color'];
+    let themeVars = themeVariables || ["@primary-color"];
 
-    const lessPaths = [path.join(antdPath, './style')].concat(stylesDir);
+    const lessPaths = [path.join(antdPath, "./style")].concat(stylesDir);
 
     const randomColors = {};
     const randomColorsVars = {};
@@ -328,7 +333,7 @@ async function generateTheme ({
     // 合并所有less文件到一个文件中
     let antdLess = await bundle({
       src: antdStylesFile,
-      rootVars: { 'root-entry-name': rootEntryName }
+      rootVars: { "root-entry-name": rootEntryName },
     });
 
     // 所有变量集合
@@ -337,8 +342,8 @@ async function generateTheme ({
       getLessVars(varFile)
     );
 
-    let css = '';
-    const PRIMARY_RANDOM_COLOR = '#123456';
+    let css = "";
+    const PRIMARY_RANDOM_COLOR = "#123456";
 
     // 排除调色盘色值，如@primary-1
     themeVars = themeVars.filter(
@@ -347,30 +352,30 @@ async function generateTheme ({
 
     themeVars.forEach((varName) => {
       let color = randomColor();
-      if (varName === '@primary-color') {
+      if (varName === "@primary-color") {
         color = PRIMARY_RANDOM_COLOR;
       } else {
         while (
           (randomColorsVars[color] && color === PRIMARY_RANDOM_COLOR) ||
-          color === '#000000' ||
-          color === '#ffffff'
+          color === "#000000" ||
+          color === "#ffffff"
         ) {
           color = randomColor();
         }
       }
       randomColors[varName] = color;
       randomColorsVars[color] = varName;
-      css = `.${varName.replace('@', '')} { color: ${color}; }\n ${css}`;
+      css = `.${varName.replace("@", "")} { color: ${color}; }\n ${css}`;
     });
 
-    let varsContent = '';
+    let varsContent = "";
     themeVars.forEach((varName) => {
       [1, 2, 3, 4, 5, 7, 8, 9, 10].forEach((key) => {
         const name =
-          varName === '@primary-color'
+          varName === "@primary-color"
             ? `@primary-${key}`
             : `${varName}-${key}`;
-        css = `.${name.replace('@', '')} { color: ${getShade(
+        css = `.${name.replace("@", "")} { color: ${getShade(
           name
         )}; }\n ${css}`;
       });
@@ -378,7 +383,7 @@ async function generateTheme ({
     });
 
     const colorFileContent = combineLess(
-      path.join(antdPath, './style/color/colors.less'),
+      path.join(antdPath, "./style/color/colors.less"),
       nodeModulesPath
     );
 
@@ -386,7 +391,7 @@ async function generateTheme ({
 
     let results = await render(css, lessPaths);
     css = results.css;
-    css = css.replace(/(\/.*\/)/g, '');
+    css = css.replace(/(\/.*\/)/g, "");
     const regex = /.(?=\S*)([.a-zA-Z0-9'-]+)\ {\n {2}color: (.*);/g;
 
     themeCompiledVars = getMatches(css, regex);
@@ -395,9 +400,9 @@ async function generateTheme ({
       .map((path) => {
         return combineLess(path, nodeModulesPath, !/(default.less)/);
       })
-      .join('\n');
+      .join("\n");
 
-    let varsCombined = '';
+    let varsCombined = "";
     themeVars.forEach((varName) => {
       let color;
       if (/(.*)-(\d)/.test(varName)) {
@@ -411,7 +416,7 @@ async function generateTheme ({
 
     COLOR_FUNCTIONS.slice(1).forEach((name) => {
       antdLess = antdLess.replace(
-        new RegExp(`${name}\\((.*), \\d+%\\)`, 'g'),
+        new RegExp(`${name}\\((.*), \\d+%\\)`, "g"),
         (fullmatch, group) => {
           if (mappings[group]) {
             return `~'${fullmatch}'`;
@@ -434,18 +439,18 @@ async function generateTheme ({
     if (fades) {
       fades.forEach((fade) => {
         const value = fade
-          .split('')
+          .split("")
           .slice(5, fade.length - 1)
-          .join('');
-        const firstValue = value.split(',')[0];
+          .join("");
+        const firstValue = value.split(",")[0];
         if (
-          firstValue.startsWith('@') &&
-          firstValue.indexOf('-') === -1 &&
-          firstValue.indexOf('black') === -1 &&
-          firstValue.indexOf('white') === -1
+          firstValue.startsWith("@") &&
+          firstValue.indexOf("-") === -1 &&
+          firstValue.indexOf("black") === -1 &&
+          firstValue.indexOf("white") === -1
         ) {
           antdLess = antdLess.replace(
-            new RegExp(`(?<!(~'))fade\\(${value}\\)(?!')`, 'g'),
+            new RegExp(`(?<!(~'))fade\\(${value}\\)(?!')`, "g"),
             `~'fade(@{${firstValue.substring(
               1,
               firstValue.length
@@ -453,7 +458,7 @@ async function generateTheme ({
           );
         } else {
           antdLess = antdLess.replace(
-            new RegExp(`(?<!(~'))fade\\(${value}\\)(?!')`, 'g'),
+            new RegExp(`(?<!(~'))fade\\(${value}\\)(?!')`, "g"),
             `~'${fade}'`
           );
         }
@@ -472,7 +477,7 @@ async function generateTheme ({
     const { css: allCss } = await render(allLess, [antdPath]);
 
     results = await postcss([reducePlugin]).process(allCss, {
-      from: antdStylesFile
+      from: antdStylesFile,
     });
     css = results.css;
 
@@ -484,21 +489,21 @@ async function generateTheme ({
       } else {
         color = themeCompiledVars[varName];
       }
-      color = color.replace('(', '\\(').replace(')', '\\)');
-      css = css.replace(new RegExp(color, 'g'), varName);
+      color = color.replace("(", "\\(").replace(")", "\\)");
+      css = css.replace(new RegExp(color, "g"), varName);
     });
 
     // 调色盘函数
     const colorPaletteContent = combineLess(
-      path.join(antdPath, './style/color/colorPalette.less'),
+      path.join(antdPath, "./style/color/colorPalette.less"),
       nodeModulesPath
     );
 
     // 颜色变量
     const variables = `${filterColorVariables(varFileContent, mappings)}`;
 
-    css = css.replace(/@[\w-_]+:\s*.*;[\/.]*/gm, '');
-    css = css.replace(/\\9/g, '').trim();
+    css = css.replace(/@[\w-_]+:\s*.*;[\/.]*/gm, "");
+    css = css.replace(/\\9/g, "").trim();
     css += `\n${colorPaletteContent}\n${variables}`;
     css = minifyCss(css);
 
@@ -508,8 +513,8 @@ async function generateTheme ({
     cssCache = css;
     return cssCache;
   } catch (error) {
-    console.log('error', error);
-    return '';
+    console.log("error", error);
+    return "";
   }
 }
 
@@ -519,14 +524,14 @@ module.exports = {
   getLessVars,
   randomColor,
   minifyCss,
-  renderLessContent: render
+  renderLessContent: render,
 };
 
-function minifyCss (css) {
+function minifyCss(css) {
   // Removed all comments and empty lines
   css = css
-    .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
-    .replace(/^\s*$(?:\r\n?|\n)/gm, '');
+    .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "")
+    .replace(/^\s*$(?:\r\n?|\n)/gm, "");
 
   /*
   Converts from
@@ -547,7 +552,7 @@ function minifyCss (css) {
     }
 
   */
-  css = css.replace(/\{(\r\n?|\n)\s+/g, '{');
+  css = css.replace(/\{(\r\n?|\n)\s+/g, "{");
 
   /*
   Converts from
@@ -564,7 +569,7 @@ function minifyCss (css) {
     border: grey;}
 
   */
-  css = css.replace(/;(\r\n?|\n)\}/g, ';}');
+  css = css.replace(/;(\r\n?|\n)\}/g, ";}");
 
   /*
   Converts from
@@ -580,7 +585,7 @@ function minifyCss (css) {
   .def {color: red;background: blue;border: grey;}
 
   */
-  css = css.replace(/;(\r\n?|\n)\s+/g, ';');
+  css = css.replace(/;(\r\n?|\n)\s+/g, ";");
 
   /*
 Converts from
@@ -593,34 +598,34 @@ to
 .abc, .def {color: red;background: blue;border: grey;}
 
 */
-  css = css.replace(/,(\r\n?|\n)[.]/g, ', .');
+  css = css.replace(/,(\r\n?|\n)[.]/g, ", .");
   return css;
 }
 
 // 合并所有关联的less文件
-function combineLess (filePath, nodeModulesPath, filterReg = /.*/) {
+function combineLess(filePath, nodeModulesPath, filterReg = /.*/) {
   const fileContent = fs.readFileSync(filePath).toString();
   const directory = path.dirname(filePath);
   return fileContent
-    .split('\n')
+    .split("\n")
     .map((line) => {
-      if (line.startsWith('@import')) {
+      if (line.startsWith("@import")) {
         if (filterReg && filterReg.test(line)) {
           let importPath = line.match(/@import[^'"]*['"](.*)['"]/)[1];
-          if (!importPath.endsWith('.less')) {
-            importPath += '.less';
+          if (!importPath.endsWith(".less")) {
+            importPath += ".less";
           }
           let newPath = path.join(directory, importPath);
-          if (importPath.startsWith('~')) {
-            importPath = importPath.replace('~', '');
+          if (importPath.startsWith("~")) {
+            importPath = importPath.replace("~", "");
             newPath = path.join(nodeModulesPath, `./${importPath}`);
           }
           return combineLess(newPath, nodeModulesPath);
         } else {
-          return '';
+          return "";
         }
       }
       return line;
     })
-    .join('\n');
+    .join("\n");
 }
